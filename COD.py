@@ -15,13 +15,25 @@ if archivos:
 
     for archivo in archivos:
         try:
-            df = pd.read_csv(archivo)
+            # Intentar leer con UTF-8 y si falla probar con otros
+            try:
+                df = pd.read_csv(archivo, encoding="utf-8")
+            except UnicodeDecodeError:
+                archivo.seek(0)
+                try:
+                    df = pd.read_csv(archivo, encoding="latin-1")
+                except Exception:
+                    archivo.seek(0)
+                    df = pd.read_csv(archivo, encoding="windows-1252")
+
+            # Convertir a Parquet
             buffer = BytesIO()
             df.to_parquet(buffer, index=False)
             buffer.seek(0)
 
             nombre_salida = archivo.name.replace(".csv", ".parquet")
 
+            st.success(f"✅ {archivo.name} convertido correctamente.")
             st.download_button(
                 label=f"⬇️ Descargar {nombre_salida}",
                 data=buffer,
